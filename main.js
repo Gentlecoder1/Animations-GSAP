@@ -154,12 +154,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // scroll animation for the bottle
     const setupScrollAnimations = () => {
-        const headerOffset = header.offsetHeight - 1;
+        const headerOffset = header ? header.offsetHeight - 1 : 80;
+        const timelineEntries = document.querySelectorAll(".timeline-entry");
 
         // matchMedia is to handle responsive behaviours
         ScrollTrigger.matchMedia({
             "(min-width: 769px)": () => {
-                // initial bottle animation based on scroll position
+                // 1. Hero to Intro (Start at Center)
                 pinAndAnimate({
                     trigger: ".hero",
                     endTrigger: ".section-intro",
@@ -172,49 +173,60 @@ window.addEventListener("DOMContentLoaded", () => {
                     ],
                     headerOffset,
                 });
-                // next scroll animation for the bottle
-                pinAndAnimate({
-                    trigger: ".section-intro",
-                    endTrigger: ".timeline-entry:nth-child(even)",
-                    pin: ".hero-bottle-wrapper",
-                    animations: [
-                        {
-                            target: ".hero-bottle",
-                            vars: { rotate: 10, scale: 0.7 },
-                        },
-                        {
-                            target: ".hero-bottle-wrapper",
-                            vars: { x: "30%" }
+
+                if (timelineEntries.length > 0) {
+                    // 2. Intro to First Timeline Entry (Entry 1 is Odd -> Move bottle Left)
+                    pinAndAnimate({
+                        trigger: ".section-intro",
+                        endTrigger: timelineEntries[0],
+                        pin: ".hero-bottle-wrapper",
+                        animations: [
+                            {
+                                target: ".hero-bottle",
+                                vars: { rotate: 10, scale: 0.7 },
+                            },
+                            {
+                                target: ".hero-bottle-wrapper",
+                                vars: { x: "30%" }
+                            }
+                        ],
+                        headerOffset,
+                    });
+
+                    // 3. Loop through all subsequent timeline entries
+                    timelineEntries.forEach((entry, index) => {
+                        const nextEntry = timelineEntries[index + 1];
+                        if (nextEntry) {
+                            // index 0 -> 1: From Entry 1 (Odd) to Entry 2 (Even)
+                            // isEven relative to nth-child (index + 2 for the 'next' entry)
+                            const isNextEven = (index + 2) % 2 === 0;
+
+                            pinAndAnimate({
+                                trigger: entry,
+                                endTrigger: nextEntry,
+                                pin: ".hero-bottle-wrapper",
+                                animations: [
+                                    {
+                                        target: ".hero-bottle",
+                                        vars: { rotate: isNextEven ? 360 : -360, scale: 0.7 },
+                                    },
+                                    {
+                                        target: ".hero-bottle-wrapper",
+                                        vars: { x: isNextEven ? "-25%" : "30%" }
+                                    }
+                                ],
+                                headerOffset,
+                            });
                         }
-                    ],
-                    markers: false,
-                    headerOffset,
-                });
-                // next scroll animation for the bottle
-                pinAndAnimate({
-                    trigger: ".timeline-entry:nth-child(even)",
-                    endTrigger: ".timeline-entry:nth-child(odd)",
-                    pin: ".hero-bottle-wrapper",
-                    animations: [
-                        {
-                            target: ".hero-bottle",
-                            vars: { rotate: -10, scale: 0.7 },
-                        },
-                        {
-                            target: ".hero-bottle-wrapper",
-                            vars: { x: "-25%" }
-                        }
-                    ],
-                    markers: false,
-                    headerOffset,
-                });
+                    });
+                }
             },
             // mobile animations
             "(max-width: 768px)": () => {
                 gsap.to(".hero-bottle-wrapper", {
                     opacity: 1,
                     duration: 1,
-                    delay:0.5,
+                    delay: 0.5,
                 });
             }
         })
