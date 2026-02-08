@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", () => {
     window.toggleMobileNav = toggleMobileNav;
 
     const runInitialAnimations = () => {
-        const onLoadTl = gsap.timeline({ defaults: { ease: "power.out" } });
+        const onLoadTl = gsap.timeline({ defaults: { ease: "power2.out" } });
 
         onLoadTl
         // animate header border with exxpansion
@@ -27,7 +27,7 @@ window.addEventListener("DOMContentLoaded", () => {
         )
         // slide nav and sidebar items
         .from(
-            "desktop-nav a, .social-sidebar a",
+            ".desktop-nav a, .social-sidebar a",
             {
                 y: -100,
                 opacity: 0,
@@ -47,6 +47,15 @@ window.addEventListener("DOMContentLoaded", () => {
             0
         )
         // fade in the hero heading
+        .to(
+            ".hero-content h1",
+            {
+                opacity: 1,
+                duration: 1,
+            },
+            0
+        )
+        // animate the text stroke to solid color
         .to(
             ".hero-content h1",
             {
@@ -72,7 +81,7 @@ window.addEventListener("DOMContentLoaded", () => {
         )
         // reveal the bottle wrapper
         .to(
-            "hero-bottle-wrapper",
+            ".hero-bottle-wrapper",
             {
                 opacity: 1,
                 scale: 1,
@@ -84,7 +93,7 @@ window.addEventListener("DOMContentLoaded", () => {
         )
         // pop-in stamp image
         .to(
-            "hero-stamp",
+            ".hero-stamp",
             {
                 opacity: 1,
                 scale: 1,
@@ -109,5 +118,110 @@ window.addEventListener("DOMContentLoaded", () => {
         )
     }
 
-    runInitialAnimations()
+    // main scrolleffect animations
+    const pinAndAnimate = ({
+        trigger, 
+        endTrigger, 
+        pin, 
+        animations, 
+        markers = false, 
+        headerOffset = 0,
+    }) => {
+        // define scroll end position with header offset
+        const end = `top top+=${headerOffset}`;
+
+        // create a GSAP timeline connected to ScrollTrigger
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger,
+                start: `top top+=${headerOffset}`,
+                endTrigger,
+                end,
+                scrub: true,
+                pin,
+                pinSpacing: false,
+                markers: markers,
+                invalidateOnRefresh: true,
+            },
+        });
+
+        // loop through each animation object
+
+        animations.forEach(({ target, vars, position = 0 }) => {
+            tl.to(target, vars, position);
+        });
+    };
+
+    // scroll animation for the bottle
+    const setupScrollAnimations = () => {
+        const headerOffset = header.offsetHeight - 1;
+
+        // matchMedia is to handle responsive behaviours
+        ScrollTrigger.matchMedia({
+            "(min-width: 769px)": () => {
+                // initial bottle animation based on scroll position
+                pinAndAnimate({
+                    trigger: ".hero",
+                    endTrigger: ".section-intro",
+                    pin: ".hero-bottle-wrapper",
+                    animations: [
+                        {
+                            target: ".hero-bottle",
+                            vars: { rotate: 0, scale: 0.8 }
+                        },
+                    ],
+                    headerOffset,
+                });
+                // next scroll animation for the bottle
+                pinAndAnimate({
+                    trigger: ".section-intro",
+                    endTrigger: ".timeline-entry:nth-child(even)",
+                    pin: ".hero-bottle-wrapper",
+                    animations: [
+                        {
+                            target: ".hero-bottle",
+                            vars: { rotate: 10, scale: 0.7 },
+                        },
+                        {
+                            target: ".hero-bottle-wrapper",
+                            vars: { x: "30%" }
+                        }
+                    ],
+                    markers: false,
+                    headerOffset,
+                });
+                // next scroll animation for the bottle
+                pinAndAnimate({
+                    trigger: ".timeline-entry:nth-child(even)",
+                    endTrigger: ".timeline-entry:nth-child(odd)",
+                    pin: ".hero-bottle-wrapper",
+                    animations: [
+                        {
+                            target: ".hero-bottle",
+                            vars: { rotate: -10, scale: 0.7 },
+                        },
+                        {
+                            target: ".hero-bottle-wrapper",
+                            vars: { x: "-25%" }
+                        }
+                    ],
+                    markers: false,
+                    headerOffset,
+                });
+            },
+            // mobile animations
+            "(max-width: 768px)": () => {
+                gsap.to(".hero-bottle-wrapper", {
+                    opacity: 1,
+                    duration: 1,
+                    delay:0.5,
+                });
+            }
+        })
+    }
+
+    runInitialAnimations();
+    setupScrollAnimations();
+
+    ScrollTrigger.refresh();
 });
